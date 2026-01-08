@@ -1,51 +1,34 @@
-import os
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_bcrypt import Bcrypt
-from models import db, User, Area, Entry  # Importiert deine Struktur aus models.py
-
-app = Flask(__name__)
-
-# Konfiguration
-app.config['SECRET_KEY'] = 'dein_geheimes_passwort_123' # Später ändern!
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialisierung der Erweiterungen
-db.init_app(app)
-bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-# --- ROUTEN (Die Seiten deines Programms) ---
-
-@app.route('/')
-def index():
-    # Startseite (Karte)
-    return "Hier wird bald die Karte angezeigt!"
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    # Login-Logik folgt hier
-    return "Login Seite"
+from flask_login import login_user, logout_user, login_required, current_user
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Registrierungs-Logik folgt hier
-    return "Registrierungs Seite"
+    if request.method == 'POST':
+        hashed_pw = bcrypt.generate_password_hash(request.form['password']).decode('utf-8')
+        new_user = User(
+            username=request.form['username'], 
+            password=hashed_pw,
+            is_active=False # Muss vom Admin freigeschaltet werden
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registrierung erfolgreich! Ein Admin muss dich noch freischalten.', 'info')
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
-# --- SYSTEM-START ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user = User.query.filter_by(username=request.form['username']).first()
+        if user and bcrypt.check_password_hash(user.password, request.form['password']):
+            if not user.is_active:
+                flash('Dein Account ist noch nicht freigeschaltet.', 'danger')
+                return redirect(url_for('login'))
+            login_user(user)
+            return redirect(url_for('index'))
+        flash('Login fehlgeschlagen. Prüfe Name und Passwort.', 'danger')
+    return render_template('login.html')
 
-if __name__ == '__main__':
-    with app.app_context():
-        # Erstellt die lokale Datenbank-Datei, falls sie noch nicht existiert
-        db.create_all()
-        print("Lokale Datenbank wurde initialisiert.")
-    
-    # Startet den Server lokal
-    app.run(debug=True)
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
