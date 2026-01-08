@@ -29,3 +29,8 @@ def update_user(user_id):
                 user.assigned_areas.append(area)
         db.session.commit()
     return redirect(url_for('admin_panel'))
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
