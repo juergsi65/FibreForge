@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 sidebar">
+        <h4>Meine Gebiete</h4>
+        <input type="text" id="search" class="form-control mb-3" placeholder="Projektnummer suchen...">
+        <div id="area-list" class="list-group">
+            </div>
+    </div>
+    <div class="col-md-9">
+        <div id="map"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="entryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Neuen Punkt anlegen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="entryForm">
+                    <div class="mb-3">
+                        <label class="form-label">Vorgeschlagene Nummer</label>
+                        <input type="text" id="generated_nr" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">TO-Nummer (Projekt)</label>
+                        <input type="text" id="to_nr" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Typ</label>
+                        <select id="typ" class="form-select">
+                            <option value="Kasten">Kasten (K)</option>
+                            <option value="Schacht">Schacht (S)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Speichern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Karte initialisieren (Zentriert auf Österreich)
+    var map = L.map('map').setView([48.0, 14.0], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Klick-Event auf der Karte
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        
+        // Hier rufen wir später per JavaScript dein Python-Backend auf,
+        // um das Gebiet zu prüfen und die Nummer zu generieren.
+        console.log("Klick bei: " + lat + ", " + lng);
+        
+        // Modal öffnen (Testweise)
+        var myModal = new bootstrap.Modal(document.getElementById('entryModal'));
+        myModal.show();
+    });
+</script>
+{% endblock %}
