@@ -1,31 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="map" style="height: 80vh; border-radius: 10px;"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+<div id="map" style="height: 600px;"></div>
 <script>
-    var map = L.map('map').setView([48.06, 14.18], 13); // Start bei Adlwang
+    var map = L.map('map').setView([48.06, 14.18], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     map.on('click', function(e) {
-        var lat = e.latlng.lat;
-        var lng = e.latlng.lng;
-
         fetch('/api/save_point', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({lat: lat, lng: lng})
+            body: JSON.stringify({lat: e.latlng.lat, lng: e.latlng.lng, typ: 'Kasten'})
         })
         .then(res => res.json())
         .then(data => {
             if(data.status === "success") {
-                L.marker([lat, lng]).addTo(map)
-                 .bindPopup("Gespeichert: " + data.nr).openPopup();
-            } else {
-                alert(data.message);
-            }
+                L.marker([e.latlng.lat, e.latlng.lng]).addTo(map)
+                 .bindPopup(data.nr + " (" + data.area + ")").openPopup();
+            } else { alert(data.message); }
         });
     });
 </script>
