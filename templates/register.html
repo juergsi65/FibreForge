@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Registrierung</h3>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Benutzername</label>
+                        <input type="text" name="username" class="form-control" required placeholder="Dein Name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Passwort</label>
+                        <input type="password" name="password" class="form-control" required placeholder="Sicheres Passwort">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Konto erstellen</button>
+                    </div>
+                </form>
+                <hr>
+                <div class="text-center">
+                    <p>Bereits ein Konto? <a href="{{ url_for('login') }}">Hier einloggen</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
