@@ -33,6 +33,12 @@ def index():
     user_areas = current_user.assigned_areas
     return render_template('index.html', areas=user_areas)
 
+@app.route('/init-db')
+def init_db():
+    with app.app_context():
+        db.create_all()
+    return "Datenbank-Tabellen wurden erfolgreich erstellt! Du kannst dich jetzt registrieren."
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
