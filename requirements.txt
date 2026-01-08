@@ -4,6 +4,7 @@ flask-login
 flask-bcrypt
 pandas
 openpyxl
-shapely
 geopandas
+shapely
+requests
 gunicorn
