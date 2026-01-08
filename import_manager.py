@@ -7,81 +7,64 @@ from models import db, Area, Entry, User
 
 def run_setup():
     with app.app_context():
-        # 1. Datenbank Tabellen erstellen
-        print("--- Schritt 1: Datenbank initialisieren ---")
         db.create_all()
 
-        # 2. Test-Admin erstellen (falls nicht vorhanden)
+        # 1. Admin erstellen
         if not User.query.filter_by(username="admin").first():
             hashed_pw = bcrypt.generate_password_hash("admin123").decode('utf-8')
-            admin_user = User(username="admin", password=hashed_pw, is_admin=True, is_active=True)
-            db.session.add(admin_user)
-            print("✅ Admin-User erstellt (Login: admin / PW: admin123)")
+            db.session.add(User(username="admin", password=hashed_pw, is_admin=True, is_active=True))
+            print("✅ Admin 'admin' erstellt.")
 
-        # 3. Gebiete und Grenzen automatisch laden
-        print("\n--- Schritt 2: Grenzen laden (OSM) ---")
-        gebiets_liste = [
-            {"name": "Adlwang", "kuerzel": "ADLW"},
-            {"name": "Steyr", "kuerzel": "STYR"},
-            {"name": "Bad Hall", "kuerzel": "BHALL"}
-        ]
-        
-        headers = {'User-Agent': 'FibreForge-App/1.0'}
-        for g in gebiets_liste:
-            area = Area.query.filter_by(kuerzel=g['kuerzel']).first()
-            if not area or not area.geojson_border:
-                url = f"https://nominatim.openstreetmap.org/search?city={g['name']}&country=Austria&format=json&polygon_geojson=1"
-                try:
+        # 2. GEBIETE aus der CSV laden
+        gebiets_csv = 'gebietsliste.csv' # Name deiner Gebiets-CSV
+        if os.path.exists(gebiets_csv):
+            # Wir lesen die CSV (trennung meist durch Komma oder Semikolon)
+            df_geo = pd.read_csv(gebiets_csv, sep=None, engine='python') 
+            print(f"--- Lade Grenzen für {len(df_geo)} Gebiete ---")
+            
+            headers = {'User-Agent': 'FibreForge-App/1.0'}
+            for _, row in df_geo.iterrows():
+                name = row['Name'] # Spaltenname in deiner CSV anpassen!
+                kuerzel = row['Kuerzel']
+                
+                if not Area.query.filter_by(kuerzel=kuerzel).first():
+                    url = f"https://nominatim.openstreetmap.org/search?city={name}&country=Austria&format=json&polygon_geojson=1"
                     res = requests.get(url, headers=headers).json()
-                    if res:
-                        geojson_data = json.dumps(res[0].get('geojson'))
-                        if not area:
-                            area = Area(name=g['name'], kuerzel=g['kuerzel'], geojson_border=geojson_data)
-                            db.session.add(area)
-                        else:
-                            area.geojson_border = geojson_data
-                        print(f"✅ Grenzen für {g['name']} geladen.")
-                except Exception as e:
-                    print(f"❌ Fehler bei {g['name']}: {e}")
-        
-        db.session.commit()
+                    geojson_data = json.dumps(res[0].get('geojson')) if res else None
+                    
+                    new_area = Area(name=name, kuerzel=kuerzel, geojson_border=geojson_data)
+                    db.session.add(new_area)
+                    print(f"✅ Gebiet {name} ({kuerzel}) angelegt.")
+            db.session.commit()
+        else:
+            print(f"❌ {gebiets_csv} nicht gefunden!")
 
-        # 4. Excel-Daten importieren (.xlsm)
-        print("\n--- Schritt 3: Excel-Import ---")
-        excel_path = 'daten.xlsm' # Deine Datei muss so heißen!
+        # 3. BESTANDSDATEN aus der Makro-Excel (.xlsm) laden
+        excel_path = 'bestandsliste.xlsm' # Name deiner Makro-Excel
         if os.path.exists(excel_path):
             try:
-                # Liest das erste Tabellenblatt der Makro-Datei
-                df = pd.read_excel(excel_path, engine='openpyxl')
+                df_points = pd.read_excel(excel_path, engine='openpyxl')
+                print(f"--- Importiere Bestandsdaten aus Excel ---")
                 
-                # Wir suchen die Spalten (Groß/Kleinschreibung egal)
-                df.columns = [c.lower() for c in df.columns]
-                
-                # Mapping der Spalten - Hier eventuell Namen anpassen!
-                lat_col = 'breitengrad' if 'breitengrad' in df.columns else 'lat'
-                lng_col = 'längengrad' if 'längengrad' in df.columns else 'lng'
-                nr_col = 'nummer' if 'nummer' in df.columns else 'id'
-
-                for _, row in df.iterrows():
-                    if not Entry.query.filter_by(nr=str(row[nr_col])).first():
-                        # Wir ordnen den Punkt dem richtigen Gebiet zu
-                        # (Logik wird beim ersten Klick in der App deutlicher)
-                        new_entry = Entry(
-                            nr=str(row[nr_col]),
-                            lat=float(row[lat_col]),
-                            lng=float(row[lng_col]),
-                            area_id=1 # Standardzuordnung zum ersten Gebiet
-                        )
-                        db.session.add(new_entry)
-                
+                for _, row in df_points.iterrows():
+                    nr = str(row['Nummer']) # Spaltenname in Excel anpassen!
+                    if not Entry.query.filter_by(nr=nr).first():
+                        # Wir suchen das passende Gebiet anhand des Kürzels in der Nummer
+                        # Extrahiert z.B. 'ADLW' aus 'K_ADLW001'
+                        for area in Area.query.all():
+                            if area.kuerzel in nr:
+                                new_entry = Entry(
+                                    nr=nr,
+                                    lat=float(row['Breitengrad']), 
+                                    lng=float(row['Längengrad']),
+                                    area_id=area.id
+                                )
+                                db.session.add(new_entry)
+                                break
                 db.session.commit()
-                print(f"✅ Excel-Daten erfolgreich importiert.")
+                print("✅ Bestand erfolgreich importiert.")
             except Exception as e:
-                print(f"⚠️ Excel-Fehler: {e}. (Stimmen die Spaltennamen?)")
-        else:
-            print(f"ℹ️ Keine '{excel_path}' gefunden. Überspringe Import.")
-
-        print("\n--- Setup abgeschlossen! Starte jetzt 'python app.py' ---")
+                print(f"⚠️ Fehler beim Excel-Bestand: {e}")
 
 if __name__ == "__main__":
     run_setup()
