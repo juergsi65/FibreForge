@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Datenbank (Lokal)
+*.db
+*.sqlite3
+
+# Excel & Daten (Datenschutz!)
+*.xlsx
+*.xls
+*.csv
+/import_folder/
+
+# Windows
+Thumbs.db
+desktop.ini
