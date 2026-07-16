@@ -25,6 +25,24 @@ class Area(db.Model):
     geojson_border = db.Column(db.Text, nullable=True)
     entries = db.relationship('Entry', backref='area', lazy=True)
 
+class Gemeindegrenze(db.Model):
+    """Amtliche Gemeindegrenze (bundesweit, BEV-Verwaltungsgrenzen) - unabhängig von den manuell angelegten Service-Gebieten in Area."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    gkz = db.Column(db.String(10), unique=True, nullable=False)
+    geojson_border = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Katastralgemeinde(db.Model):
+    """Amtliche Katastralgemeindegrenze (BEV-Kataster)."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    kg_nummer = db.Column(db.String(10), unique=True, nullable=False)
+    gemeinde_id = db.Column(db.Integer, db.ForeignKey('gemeindegrenze.id'), nullable=True)
+    geojson_border = db.Column(db.Text, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    gemeinde = db.relationship('Gemeindegrenze', backref='katastralgemeinden')
+
 class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nr = db.Column(db.String(50), unique=True, nullable=False)

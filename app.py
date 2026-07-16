@@ -6,9 +6,11 @@ from flask_bcrypt import Bcrypt
 from shapely.geometry import Point, shape
 from models import db, User, Area, Entry
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'lokal-geheim'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'database.db')
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
