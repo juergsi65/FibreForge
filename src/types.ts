@@ -1,7 +1,6 @@
 export type Env = {
   DB: D1Database;
   ASSETS: Fetcher;
-  NOMINATIM_COUNTRY?: string;
 };
 
 export type User = {
@@ -9,6 +8,7 @@ export type User = {
   username: string;
   is_admin: number;
   is_active: number;
+  can_edit: number;
 };
 
 export type AppEnv = {

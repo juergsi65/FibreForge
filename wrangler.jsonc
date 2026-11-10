@@ -19,10 +19,5 @@
       "database_id": "ca62ba3d-eea8-4c2e-9861-37078feded7d",
       "migrations_dir": "migrations"
     }
-  ],
-
-  "vars": {
-    // Laendercode fuer die Suche nach Gemeindegrenzen (Nominatim/OpenStreetMap)
-    "NOMINATIM_COUNTRY": "at"
-  }
+  ]
 }

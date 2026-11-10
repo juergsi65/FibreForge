@@ -73,7 +73,7 @@ export async function loadUser(c: Context<AppEnv>): Promise<User | null> {
   const id = getCookie(c, SESSION_COOKIE);
   if (!id) return null;
   const user = await c.env.DB.prepare(
-    `SELECT u.id, u.username, u.is_admin, u.is_active
+    `SELECT u.id, u.username, u.is_admin, u.is_active, u.can_edit
        FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.id = ? AND s.expires_at > ? AND u.is_active = 1`,
   )
