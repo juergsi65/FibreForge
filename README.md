@@ -56,13 +56,8 @@ Dann http://localhost:8787 öffnen und als Erstes registrieren (wird Admin).
    npx wrangler login
    ```
 
-2. Datenbank anlegen:
-
-   ```bash
-   npx wrangler d1 create fibreforge-db
-   ```
-
-   Die ausgegebene `database_id` in `wrangler.jsonc` eintragen (ersetzt `00000000-0000-0000-0000-000000000000`).
+2. Die Datenbank `fibreforge-db` ist bereits angelegt und in `wrangler.jsonc` eingetragen.
+   Nur bei einem neuen Cloudflare-Konto: `npx wrangler d1 create fibreforge-db` ausführen und die neue `database_id` eintragen.
 
 3. Schema einspielen und deployen:
 
@@ -77,7 +72,8 @@ Dann http://localhost:8787 öffnen und als Erstes registrieren (wird Admin).
 ### Automatisch per GitHub deployen (optional)
 
 Im Cloudflare-Dashboard unter *Workers & Pages → Create → Import a repository* dieses Repository verbinden.
-Als Deploy-Befehl `npm run deploy` eintragen. Danach wird jeder Push automatisch veröffentlicht.
+Der Build läuft vom Branch `main`. Jeder Push auf `main` wird automatisch veröffentlicht.
+Kommen später neue Dateien in `migrations/` dazu, als Deploy-Befehl `npm run deploy` eintragen (spielt die Migrationen vor dem Deploy ein).
 
 ## Einstellungen
 
